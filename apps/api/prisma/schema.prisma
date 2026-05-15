@@ -1,0 +1,475 @@
+// Baskbear API — Prisma schema
+//
+// Design notes:
+//  - Money: INT minor units (cents/satang) — never floats.
+//  - Translations: per-entity tables, not JSON blobs — indexable, partial updates.
+//  - Snapshots: order_items snapshot name/price/customisations so orders stay
+//    readable after menu changes.
+//  - Country denormalised onto orders/carts → query locality and a clean
+//    sharding seam.
+//  - Soft enums kept short — Prisma maps to MySQL ENUM columns.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Localisation & Geography ─────────────────────────
+
+model Country {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique @db.Char(2) // ISO-3166-1 alpha-2: MY, TH
+  name           String    @db.VarChar(64)
+  currencyCode   String    @db.Char(3) // ISO-4217: MYR, THB
+  // Tax expressed in basis points to allow 6.0% (600) without floats.
+  taxRateBps     Int       @default(0)
+  timezone       String    @db.VarChar(64)
+  defaultLocale  String    @db.VarChar(8)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  locales        CountryLocale[]
+  outlets        Outlet[]
+  itemPrices     MenuItemCountryPrice[]
+  optionPrices   CustomisationOptionCountryPrice[]
+  voucherAvail   VoucherCountry[]
+  featureFlags   FeatureFlag[]
+  users          User[]
+  carts          Cart[]
+  orders         Order[]
+
+  @@map("countries")
+}
+
+model Locale {
+  id        Int    @id @default(autoincrement())
+  code      String @unique @db.VarChar(8) // en, ms, th
+
+  countries           CountryLocale[]
+  categoryT           CategoryTranslation[]
+  menuItemT           MenuItemTranslation[]
+  customGroupT        CustomisationGroupTranslation[]
+  customOptionT       CustomisationOptionTranslation[]
+  defaultForUsers     User[]                          @relation("UserDefaultLocale")
+
+  @@map("locales")
+}
+
+model CountryLocale {
+  countryId Int
+  localeId  Int
+  isDefault Boolean @default(false)
+
+  country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  locale  Locale  @relation(fields: [localeId],  references: [id], onDelete: Cascade)
+
+  @@id([countryId, localeId])
+  @@map("country_locales")
+}
+
+model Outlet {
+  id                Int      @id @default(autoincrement())
+  countryId         Int
+  name              String   @db.VarChar(128)
+  address           String   @db.VarChar(512)
+  latitude          Decimal  @db.Decimal(10, 7)
+  longitude         Decimal  @db.Decimal(10, 7)
+  timezoneOverride  String?  @db.VarChar(64)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  country         Country                 @relation(fields: [countryId], references: [id])
+  itemOverrides   MenuItemOutletOverride[]
+  carts           Cart[]
+  orders          Order[]
+
+  @@index([countryId, isActive])
+  @@map("outlets")
+}
+
+// ───────────────────────────────── Menu ─────────────────────────────────────
+
+model Category {
+  id        Int    @id @default(autoincrement())
+  slug      String @unique @db.VarChar(64)
+  sortOrder Int    @default(0)
+
+  translations CategoryTranslation[]
+  items        MenuItem[]
+
+  @@map("categories")
+}
+
+model CategoryTranslation {
+  categoryId  Int
+  localeId    Int
+  name        String  @db.VarChar(128)
+  description String? @db.VarChar(512)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale   Locale   @relation(fields: [localeId],   references: [id], onDelete: Cascade)
+
+  @@id([categoryId, localeId])
+  @@map("category_translations")
+}
+
+model MenuItem {
+  id              Int      @id @default(autoincrement())
+  sku             String   @unique @db.VarChar(32)
+  categoryId      Int
+  baseImageUrl    String?  @db.VarChar(512)
+  isPublished     Boolean  @default(true)
+  // JSON list of dietary tags: ["dairy-free", "vegan", "halal"]
+  dietaryTags     Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category         Category                        @relation(fields: [categoryId], references: [id])
+  translations     MenuItemTranslation[]
+  countryPrices    MenuItemCountryPrice[]
+  outletOverrides  MenuItemOutletOverride[]
+  customGroups     MenuItemCustomisationGroup[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+
+  @@index([categoryId, isPublished])
+  @@map("menu_items")
+}
+
+model MenuItemTranslation {
+  menuItemId  Int
+  localeId    Int
+  name        String  @db.VarChar(128)
+  description String? @db.VarChar(1024)
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  locale   Locale   @relation(fields: [localeId],   references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, localeId])
+  @@map("menu_item_translations")
+}
+
+model MenuItemCountryPrice {
+  menuItemId    Int
+  countryId     Int
+  priceMinor    Int
+  isAvailable   Boolean   @default(true)
+  availableFrom DateTime?
+  availableTo   DateTime?
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  country  Country  @relation(fields: [countryId],  references: [id])
+
+  @@id([menuItemId, countryId])
+  @@index([countryId, isAvailable])
+  @@map("menu_item_country_prices")
+}
+
+model MenuItemOutletOverride {
+  menuItemId  Int
+  outletId    Int
+  isAvailable Boolean @default(true)
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  outlet   Outlet   @relation(fields: [outletId],   references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, outletId])
+  @@map("menu_item_outlet_overrides")
+}
+
+// ─────────────────────────── Customisations ─────────────────────────────────
+
+model CustomisationGroup {
+  id          Int     @id @default(autoincrement())
+  slug        String  @unique @db.VarChar(64)
+  minSelect   Int     @default(0)
+  maxSelect   Int     @default(1)
+
+  translations CustomisationGroupTranslation[]
+  options      CustomisationOption[]
+  menuItems    MenuItemCustomisationGroup[]
+
+  @@map("customisation_groups")
+}
+
+model CustomisationGroupTranslation {
+  groupId  Int
+  localeId Int
+  name     String @db.VarChar(128)
+
+  group  CustomisationGroup @relation(fields: [groupId],  references: [id], onDelete: Cascade)
+  locale Locale             @relation(fields: [localeId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, localeId])
+  @@map("customisation_group_translations")
+}
+
+model CustomisationOption {
+  id              Int    @id @default(autoincrement())
+  groupId         Int
+  slug            String @db.VarChar(64)
+  // Default delta — used when no country override exists.
+  priceDeltaMinor Int    @default(0)
+
+  group           CustomisationGroup              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  translations    CustomisationOptionTranslation[]
+  countryPrices   CustomisationOptionCountryPrice[]
+
+  @@unique([groupId, slug])
+  @@map("customisation_options")
+}
+
+model CustomisationOptionTranslation {
+  optionId Int
+  localeId Int
+  name     String @db.VarChar(128)
+
+  option CustomisationOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  locale Locale              @relation(fields: [localeId], references: [id], onDelete: Cascade)
+
+  @@id([optionId, localeId])
+  @@map("customisation_option_translations")
+}
+
+model CustomisationOptionCountryPrice {
+  optionId        Int
+  countryId       Int
+  priceDeltaMinor Int
+
+  option  CustomisationOption @relation(fields: [optionId],  references: [id], onDelete: Cascade)
+  country Country             @relation(fields: [countryId], references: [id])
+
+  @@id([optionId, countryId])
+  @@map("customisation_option_country_prices")
+}
+
+model MenuItemCustomisationGroup {
+  menuItemId Int
+  groupId    Int
+  sortOrder  Int @default(0)
+
+  menuItem MenuItem           @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  group    CustomisationGroup @relation(fields: [groupId],    references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, groupId])
+  @@map("menu_item_customisation_groups")
+}
+
+// ──────────────────────────────── Users ─────────────────────────────────────
+
+model User {
+  id                Int      @id @default(autoincrement())
+  cognitoSub        String   @unique @db.VarChar(64)
+  email             String?  @unique @db.VarChar(255)
+  phone             String?  @db.VarChar(32)
+  defaultCountryId  Int?
+  defaultLocaleId   Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  defaultCountry  Country?            @relation(fields: [defaultCountryId], references: [id])
+  defaultLocale   Locale?             @relation("UserDefaultLocale", fields: [defaultLocaleId], references: [id])
+  carts           Cart[]
+  orders          Order[]
+  voucherUses     VoucherRedemption[]
+
+  @@map("users")
+}
+
+// ──────────────────────────── Cart & Orders ─────────────────────────────────
+
+model Cart {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  countryId    Int
+  outletId     Int?
+  currencyCode String   @db.Char(3)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User       @relation(fields: [userId],    references: [id])
+  country Country    @relation(fields: [countryId], references: [id])
+  outlet  Outlet?    @relation(fields: [outletId],  references: [id])
+  items   CartItem[]
+
+  @@unique([userId, countryId])
+  @@map("carts")
+}
+
+model CartItem {
+  id                 Int      @id @default(autoincrement())
+  cartId             Int
+  menuItemId         Int
+  quantity           Int
+  unitPriceMinor     Int
+  // Snapshot of selected customisations:
+  //   [{ groupSlug:"size", optionSlug:"L", deltaMinor:300, name:"Large" }, ...]
+  customisationsJson Json
+  lineTotalMinor     Int
+  createdAt          DateTime @default(now())
+
+  cart     Cart     @relation(fields: [cartId],     references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([cartId])
+  @@map("cart_items")
+}
+
+enum FulfilmentType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING      // created, awaiting kitchen
+  CONFIRMED    // accepted by outlet
+  PREPARING    // being made
+  READY        // ready for pickup / handover to courier
+  COMPLETED    // handed over to customer
+  CANCELLED    // cancelled by user or outlet
+}
+
+model Order {
+  id                Int            @id @default(autoincrement())
+  orderNumber       String         @unique @db.VarChar(32) // ULID
+  userId            Int
+  countryId         Int
+  outletId          Int?
+  status            OrderStatus    @default(PENDING)
+  fulfilmentType    FulfilmentType
+  subtotalMinor     Int
+  discountMinor     Int            @default(0)
+  taxMinor          Int            @default(0)
+  totalMinor        Int
+  currencyCode      String         @db.Char(3)
+  voucherId         Int?
+  // Idempotency key from POST /v1/orders — guarantees at-most-once placement.
+  idempotencyKey    String?        @db.VarChar(64)
+  notes             String?        @db.VarChar(512)
+  placedAt          DateTime       @default(now())
+  fulfilledAt       DateTime?
+
+  user             User                 @relation(fields: [userId],    references: [id])
+  country          Country              @relation(fields: [countryId], references: [id])
+  outlet           Outlet?              @relation(fields: [outletId],  references: [id])
+  voucher          Voucher?             @relation(fields: [voucherId], references: [id])
+  items            OrderItem[]
+  statusEvents     OrderStatusEvent[]
+  voucherRedemption VoucherRedemption?
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, placedAt(sort: Desc)])
+  @@index([countryId, placedAt(sort: Desc)])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                          Int    @id @default(autoincrement())
+  orderId                     Int
+  menuItemId                  Int
+  sku                         String @db.VarChar(32)
+  nameSnapshot                String @db.VarChar(128)
+  quantity                    Int
+  unitPriceMinor              Int
+  customisationsSnapshotJson  Json
+  lineTotalMinor              Int
+
+  order    Order    @relation(fields: [orderId],    references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model OrderStatusEvent {
+  id          Int         @id @default(autoincrement())
+  orderId     Int
+  status      OrderStatus
+  occurredAt  DateTime    @default(now())
+  source      String      @db.VarChar(32) // SYSTEM, OUTLET, COURIER, ADMIN
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, occurredAt])
+  @@map("order_status_events")
+}
+
+// ─────────────────────────────── Vouchers ───────────────────────────────────
+
+enum VoucherType {
+  PERCENT  // value is basis points (1000 = 10.00%)
+  FIXED    // value is minor units in the voucher's allowed country currency
+}
+
+model Voucher {
+  id                Int         @id @default(autoincrement())
+  code              String      @unique @db.VarChar(32)
+  type              VoucherType
+  value             Int
+  minSpendMinor     Int         @default(0)
+  // For PERCENT: cap on absolute discount; null = no cap.
+  maxDiscountMinor  Int?
+  perUserLimit      Int         @default(1)
+  totalLimit        Int?
+  startsAt          DateTime
+  endsAt            DateTime
+  stackable         Boolean     @default(false)
+  isActive          Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+
+  countries     VoucherCountry[]
+  redemptions   VoucherRedemption[]
+  orders        Order[]
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("vouchers")
+}
+
+model VoucherCountry {
+  voucherId Int
+  countryId Int
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  country Country @relation(fields: [countryId], references: [id])
+
+  @@id([voucherId, countryId])
+  @@map("voucher_countries")
+}
+
+model VoucherRedemption {
+  id             Int      @id @default(autoincrement())
+  voucherId      Int
+  userId         Int
+  orderId        Int      @unique
+  discountMinor  Int
+  redeemedAt     DateTime @default(now())
+
+  voucher Voucher @relation(fields: [voucherId], references: [id])
+  user    User    @relation(fields: [userId],    references: [id])
+  order   Order   @relation(fields: [orderId],   references: [id], onDelete: Cascade)
+
+  @@index([voucherId, userId])
+  @@map("voucher_redemptions")
+}
+
+// ───────────────────────────── Feature Flags ────────────────────────────────
+
+model FeatureFlag {
+  id         Int      @id @default(autoincrement())
+  key        String   @db.VarChar(64)
+  // null = global, otherwise per-country override.
+  countryId  Int?
+  isEnabled  Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  country Country? @relation(fields: [countryId], references: [id])
+
+  @@unique([key, countryId])
+  @@map("feature_flags")
+}

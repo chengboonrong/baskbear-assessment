@@ -1,0 +1,32 @@
+flowchart LR
+  subgraph Edge
+    R53[Route 53<br/>Latency routing]
+    CF[CloudFront<br/>Edge cache + WAF]
+  end
+  subgraph SG[ap-southeast-1 Primary]
+    ALB1[ALB] --> ECS1[ECS Fargate<br/>NestJS]
+    ECS1 --> Redis1[(ElastiCache Redis)]
+    ECS1 --> Proxy1[RDS Proxy]
+    Proxy1 --> Aurora1[(Aurora MySQL<br/>Writer + 2 Readers)]
+    ECS1 --> SQS1[(SQS)]
+    Cog1[Cognito User Pool]
+  end
+  subgraph MY[ap-southeast-5 Secondary]
+    ALB2[ALB] --> ECS2[ECS Fargate<br/>NestJS]
+    ECS2 --> Redis2[(ElastiCache Redis)]
+    ECS2 --> Proxy2[RDS Proxy]
+    Proxy2 --> Aurora2[(Aurora MySQL<br/>Writer + 2 Readers)]
+    ECS2 --> SQS2[(SQS)]
+    Cog2[Cognito User Pool]
+  end
+  R53 --> ALB1
+  R53 --> ALB2
+  CF --> ALB1
+  CF --> ALB2
+  Aurora1 -. Global Database .- Aurora2
+  Cog1 -. Lambda replicator .- Cog2
+  ECS1 --> S3[(S3 + CloudFront)]
+  ECS2 --> S3
+  ECS1 --> XR[CloudWatch + X-Ray]
+  ECS2 --> XR
+  XR --> PD[SNS &rarr; PagerDuty]

@@ -1,0 +1,33 @@
+name: mobile-ci
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/mobile/**', '.github/workflows/mobile-ci.yml']
+  pull_request:
+    paths: ['apps/mobile/**', '.github/workflows/mobile-ci.yml']
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.3'
+          channel: stable
+          cache: true
+
+      - name: Make a placeholder .env so the asset bundles
+        run: cp .env.example .env
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test --reporter expanded
+      - name: Build APK (debug)
+        run: flutter build apk --debug

@@ -1,0 +1,63 @@
+name: api-ci
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/api/**', '.github/workflows/api-ci.yml']
+  pull_request:
+    paths: ['apps/api/**', '.github/workflows/api-ci.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci
+          MYSQL_DATABASE: baskbear_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -uroot -pci"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    env:
+      DATABASE_URL: mysql://root:ci@127.0.0.1:3306/baskbear_ci
+      DEV_AUTH_BYPASS: 'true'
+      DEV_DEFAULT_SUB: demo-user-sub
+      DEFAULT_COUNTRY_CODE: MY
+      COGNITO_REGION: ap-southeast-1
+      COGNITO_USER_POOL_ID: ap-southeast-1_xxxxxxx
+      COGNITO_APP_CLIENT_ID: xxxxxxxxxxxxxxxxxxxxxxxxxx
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: Migrate + seed
+        run: |
+          npx prisma migrate deploy
+          npm run seed
+
+      - name: Unit tests
+        run: npm test -- --runInBand

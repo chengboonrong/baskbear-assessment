@@ -1,0 +1,59 @@
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Node / NestJS (apps/api)
+node_modules/
+dist/
+build/
+coverage/
+*.log
+npm-debug.log*
+
+# Prisma generated client
+apps/api/prisma/generated/
+apps/api/node_modules/
+
+# Flutter (apps/mobile)
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.pub-cache/
+apps/mobile/.pub/
+apps/mobile/build/
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+apps/mobile/ios/Runner.xcworkspace/xcuserdata/
+apps/mobile/ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
+apps/mobile/ios/Runner.xcodeproj/xcuserdata/
+apps/mobile/android/.gradle/
+apps/mobile/android/app/debug
+apps/mobile/android/app/profile
+apps/mobile/android/app/release
+apps/mobile/android/captures/
+apps/mobile/android/gradlew
+apps/mobile/android/gradlew.bat
+apps/mobile/android/local.properties
+apps/mobile/macos/
+apps/mobile/linux/
+apps/mobile/windows/
+apps/mobile/web/
+
+# Generated localisation / riverpod code
+apps/mobile/**/*.g.dart
+apps/mobile/**/*.freezed.dart
+apps/mobile/lib/l10n/gen/
+
+# Test reports
+apps/mobile/coverage/
+apps/api/test-results/

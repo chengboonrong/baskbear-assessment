@@ -1,0 +1,37 @@
+# Local dev infra for the Baskbear assessment.
+# Production runs Aurora MySQL + ElastiCache Redis (see docs/architecture.md).
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: baskbear-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: baskbear
+      MYSQL_DATABASE: baskbear
+      MYSQL_USER: baskbear
+      MYSQL_PASSWORD: baskbear
+    ports:
+      - "3307:3306"          # host:container — host=3307 to avoid clashing with native MySQL on 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pbaskbear"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: baskbear-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql_data:
