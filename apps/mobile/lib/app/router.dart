@@ -47,31 +47,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
-            path: '/cart',
-            builder: (_, __) => const CartScreen(),
-            routes: [
-              GoRoute(
-                path: 'checkout',
-                builder: (_, __) => const CheckoutScreen(),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/orders',
-            builder: (_, __) => const OrdersScreen(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                builder: (_, state) =>
-                    OrderDetailScreen(id: int.parse(state.pathParameters['id']!)),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/vouchers',
-            builder: (_, __) => const VouchersScreen(),
-          ),
-          GoRoute(
             path: '/ai',
             builder: (_, __) => const AiBaristaScreen(),
           ),
@@ -80,6 +55,33 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const AccountScreen(),
           ),
         ],
+      ),
+      // Drilled-in pages: full-screen (no bottom nav), reached from the cart FAB
+      // and the Account tab. Kept outside the ShellRoute so they cover the shell.
+      GoRoute(
+        path: '/cart',
+        builder: (_, __) => const CartScreen(),
+        routes: [
+          GoRoute(
+            path: 'checkout',
+            builder: (_, __) => const CheckoutScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/orders',
+        builder: (_, __) => const OrdersScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) =>
+                OrderDetailScreen(id: int.parse(state.pathParameters['id']!)),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/vouchers',
+        builder: (_, __) => const VouchersScreen(),
       ),
     ],
   );

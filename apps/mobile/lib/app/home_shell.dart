@@ -1,34 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/repositories/cart_repository.dart';
+import '../shared/widgets/lotties.dart';
+
 /// Bottom-nav shell wrapping the main app surfaces.
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.child});
   final Widget child;
 
   static const _tabs = [
-    (path: '/menu',     icon: Icons.coffee_outlined,     active: Icons.coffee,        label: 'Menu'),
-    (path: '/cart',     icon: Icons.shopping_bag_outlined, active: Icons.shopping_bag, label: 'Cart'),
-    (path: '/orders',   icon: Icons.receipt_long_outlined, active: Icons.receipt_long, label: 'Orders'),
-    (path: '/vouchers', icon: Icons.local_offer_outlined,  active: Icons.local_offer,  label: 'Offers'),
-    (path: '/ai',       icon: Icons.auto_awesome_outlined, active: Icons.auto_awesome, label: 'Barista'),
-    (path: '/account',  icon: Icons.person_outline,        active: Icons.person,       label: 'Account'),
+    (path: '/menu',    asset: AppLottie.tabMenu,    label: 'Menu'),
+    (path: '/ai',      asset: AppLottie.tabBarista, label: 'Barista'),
+    (path: '/account', asset: AppLottie.tabAccount, label: 'Account'),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final loc = GoRouterState.of(context).uri.path;
-    final index = _tabs.indexWhere((t) => loc.startsWith(t.path));
+    final rawIndex = _tabs.indexWhere((t) => loc.startsWith(t.path));
+    final index = rawIndex < 0 ? 0 : rawIndex;
+    final cartCount = ref.watch(cartProvider).maybeWhen(
+          data: (c) => c.items.fold<int>(0, (s, i) => s + i.quantity),
+          orElse: () => 0,
+        );
     return Scaffold(
       body: child,
+      floatingActionButton: cartCount > 0
+          ? CartFab(count: cartCount, onPressed: () => context.push('/cart'))
+          : null,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: index < 0 ? 0 : index,
+        selectedIndex: index,
         destinations: [
-          for (final t in _tabs)
+          for (var i = 0; i < _tabs.length; i++)
             NavigationDestination(
-              icon: Icon(t.icon),
-              selectedIcon: Icon(t.active),
-              label: t.label,
+              icon: TabLottieIcon(asset: _tabs[i].asset, selected: i == index),
+              label: _tabs[i].label,
             ),
         ],
         onDestinationSelected: (i) => context.go(_tabs[i].path),

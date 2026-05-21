@@ -39,4 +39,20 @@ void main() {
   testWidgets('LottieFooter paints', (t) async {
     await pumpFrames(t, const LottieFooter());
   });
+
+  testWidgets('CartFab paints', (t) async {
+    await pumpFrames(t, CartFab(count: 3, onPressed: () {}));
+  });
+
+  for (final selected in [true, false]) {
+    testWidgets('TabLottieIcon paints (selected=$selected)', (t) async {
+      await pumpFrames(
+        t,
+        IconTheme(
+          data: const IconThemeData(color: Colors.brown, size: 24),
+          child: TabLottieIcon(asset: AppLottie.tabBarista, selected: selected),
+        ),
+      );
+    });
+  }
 }

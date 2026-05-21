@@ -220,3 +220,28 @@ class _TabLottieIconState extends State<TabLottieIcon>
     );
   }
 }
+
+/// Floating cart button: a Lottie bag glyph with an item-count badge. Shown by
+/// [HomeShell] only when the cart is non-empty, and reused for the cart entry
+/// point everywhere. Presentational — the count and tap handler are injected.
+class CartFab extends StatelessWidget {
+  const CartFab({super.key, required this.count, required this.onPressed});
+
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Badge.count(
+      count: count,
+      child: FloatingActionButton(
+        onPressed: onPressed,
+        child: const SizedBox(
+          width: 24,
+          height: 24,
+          child: TabLottieIcon(asset: AppLottie.tabCart, selected: true),
+        ),
+      ),
+    );
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/country.dart';
 import '../../data/repositories/countries_repository.dart';
@@ -25,6 +26,19 @@ class AccountScreen extends ConsumerWidget {
             leading: BearAvatar(size: 48),
             title: Text('Demo user'),
             subtitle: Text('demo@baskbear.test'),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.receipt_long_outlined),
+            title: const Text('My orders'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/orders'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.local_offer_outlined),
+            title: const Text('Offers'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/vouchers'),
           ),
           const Divider(),
           Padding(

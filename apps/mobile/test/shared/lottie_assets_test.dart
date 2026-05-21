@@ -14,6 +14,12 @@ void main() {
     'assets/lottie/bear_avatar.json',
     'assets/lottie/empty_state.json',
     'assets/lottie/footer_steam.json',
+    'assets/lottie/tab_menu.json',
+    'assets/lottie/tab_cart.json',
+    'assets/lottie/tab_orders.json',
+    'assets/lottie/tab_offers.json',
+    'assets/lottie/tab_barista.json',
+    'assets/lottie/tab_account.json',
   ];
 
   for (final path in assets) {
