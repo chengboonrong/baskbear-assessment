@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Headers, Param, ParseIntPipe, Post, UseGuards, UseInterceptors } from '@nestjs/common';
-import { FulfilmentType } from '@prisma/client';
+import { FulfilmentType } from '../generated/prisma/client';
 import { z } from 'zod';
 import { CognitoJwtGuard } from '../auth/cognito-jwt.guard';
 import { CountryInterceptor } from '../countries/country.interceptor';

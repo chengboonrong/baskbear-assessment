@@ -1,0 +1,6 @@
+[
+  { "key": "delivery_enabled", "country": "MY",   "isEnabled": true  },
+  { "key": "delivery_enabled", "country": "TH",   "isEnabled": false },
+  { "key": "loyalty_program",  "country": null,   "isEnabled": true  },
+  { "key": "voucher_stacking", "country": null,   "isEnabled": false }
+]

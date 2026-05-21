@@ -1,0 +1,41 @@
+[
+  {
+    "code": "WELCOME10",
+    "type": "PERCENT",
+    "value": 1000,
+    "minSpend": 1500,
+    "maxDiscount": 500,
+    "perUser": 1,
+    "total": null,
+    "startsAt": "2026-01-01T00:00:00Z",
+    "endsAt":   "2026-12-31T23:59:59Z",
+    "stackable": false,
+    "countries": ["MY", "TH", "SG"]
+  },
+  {
+    "code": "MY5OFF",
+    "type": "FIXED",
+    "value": 500,
+    "minSpend": 2500,
+    "maxDiscount": null,
+    "perUser": 3,
+    "total": 1000,
+    "startsAt": "2026-04-01T00:00:00Z",
+    "endsAt":   "2026-12-31T23:59:59Z",
+    "stackable": false,
+    "countries": ["MY"]
+  },
+  {
+    "code": "EXPIRED20",
+    "type": "PERCENT",
+    "value": 2000,
+    "minSpend": 0,
+    "maxDiscount": null,
+    "perUser": 1,
+    "total": null,
+    "startsAt": "2024-01-01T00:00:00Z",
+    "endsAt":   "2024-12-31T23:59:59Z",
+    "stackable": false,
+    "countries": ["MY", "TH"]
+  }
+]

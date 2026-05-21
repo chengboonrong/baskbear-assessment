@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
 import '../../data/models/cart.dart';
 import '../../data/repositories/cart_repository.dart';
+import '../../shared/widgets/lotties.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -15,7 +16,7 @@ class CartScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Cart')),
       body: cartAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => Center(child: Text('$e')),
         data: (cart) {
           if (cart.items.isEmpty) {
@@ -120,19 +121,11 @@ class _CartLine extends ConsumerWidget {
 class _EmptyCart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.shopping_bag_outlined, size: 64),
-          const SizedBox(height: 12),
-          Text('Your cart is empty', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => GoRouter.of(context).go('/menu'),
-            child: const Text('Browse menu'),
-          ),
-        ],
+    return LottieEmpty(
+      message: 'Your cart is empty',
+      action: TextButton(
+        onPressed: () => GoRouter.of(context).go('/menu'),
+        child: const Text('Browse menu'),
       ),
     );
   }

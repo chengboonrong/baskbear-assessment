@@ -10,13 +10,20 @@
 //  - Soft enums kept short — Prisma maps to MySQL ENUM columns.
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  // Prisma 7's modern generator. Emits plain TypeScript to an explicit
+  // output path (not node_modules). moduleFormat=cjs + importFileExtension=""
+  // produces bare relative imports (no `.js`) so ts-node, Jest, and `nest
+  // build` all resolve the generated files consistently.
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "cjs"
+  generatedFileExtension = "ts"
+  importFileExtension    = ""
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 // ───────────────────────── Localisation & Geography ─────────────────────────

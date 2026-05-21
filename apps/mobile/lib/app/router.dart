@@ -11,6 +11,7 @@ import '../features/orders/orders_screen.dart';
 import '../features/orders/order_detail_screen.dart';
 import '../features/vouchers/vouchers_screen.dart';
 import '../features/account/account_screen.dart';
+import '../features/ai_barista/ai_barista_screen.dart';
 import 'home_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -69,6 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/vouchers',
             builder: (_, __) => const VouchersScreen(),
+          ),
+          GoRoute(
+            path: '/ai',
+            builder: (_, __) => const AiBaristaScreen(),
           ),
           GoRoute(
             path: '/account',

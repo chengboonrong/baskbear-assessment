@@ -1,0 +1,41 @@
+[
+  {
+    "code": "MY",
+    "name": "Malaysia",
+    "currencyCode": "MYR",
+    "taxRateBps": 600,
+    "timezone": "Asia/Kuala_Lumpur",
+    "defaultLocale": "en",
+    "locales": ["en", "ms"],
+    "outlets": [
+      { "name": "Baskbear KLCC",       "address": "Lot 421, Suria KLCC, Kuala Lumpur",   "lat": 3.158, "lng": 101.713 },
+      { "name": "Baskbear Mid Valley", "address": "LG-021, Mid Valley Megamall, KL",     "lat": 3.118, "lng": 101.677 }
+    ]
+  },
+  {
+    "code": "TH",
+    "name": "Thailand",
+    "currencyCode": "THB",
+    "taxRateBps": 700,
+    "timezone": "Asia/Bangkok",
+    "defaultLocale": "en",
+    "locales": ["en", "th"],
+    "outlets": [
+      { "name": "Baskbear Siam Paragon", "address": "991 Rama I Rd, Pathum Wan, Bangkok",        "lat": 13.746, "lng": 100.534 },
+      { "name": "Baskbear EmQuartier",   "address": "693-695 Sukhumvit Rd, Khlong Toei, Bangkok", "lat": 13.731, "lng": 100.569 }
+    ]
+  },
+  {
+    "code": "SG",
+    "name": "Singapore",
+    "currencyCode": "SGD",
+    "taxRateBps": 900,
+    "timezone": "Asia/Singapore",
+    "defaultLocale": "en",
+    "locales": ["en"],
+    "outlets": [
+      { "name": "Baskbear ION Orchard",  "address": "2 Orchard Turn, ION Orchard, Singapore",     "lat": 1.3043, "lng": 103.8316 },
+      { "name": "Baskbear Marina Bay",   "address": "10 Bayfront Avenue, MBS Shoppes, Singapore", "lat": 1.2839, "lng": 103.8607 }
+    ]
+  }
+]

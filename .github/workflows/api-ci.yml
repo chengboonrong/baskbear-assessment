@@ -48,6 +48,13 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Prisma 7's generator emits to src/generated/prisma (gitignored).
+      # `npm ci` runs the `postinstall` script which calls `prisma generate`,
+      # but we re-run it explicitly so a missing/broken postinstall hook fails
+      # here loudly instead of later as a confusing "Cannot find module" error.
+      - name: Prisma generate
+        run: npx prisma generate
+
       - name: Type-check
         run: npx tsc --noEmit -p tsconfig.json
 

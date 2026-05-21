@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Baskbear uses your location to show the menu, prices, and outlets for the country you're in. You can also pick your country manually.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Baskbear uses the microphone so you can speak your order to the AI Barista.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Baskbear transcribes your speech so the AI Barista can understand your request.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

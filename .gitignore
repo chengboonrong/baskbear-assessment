@@ -18,8 +18,9 @@ coverage/
 *.log
 npm-debug.log*
 
-# Prisma generated client
+# Prisma generated client (Prisma 7: emitted to src/generated/prisma)
 apps/api/prisma/generated/
+apps/api/src/generated/
 apps/api/node_modules/
 
 # Flutter (apps/mobile)

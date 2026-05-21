@@ -17,5 +17,15 @@ class AppEnv {
   static String? get cognitoRegion => _orNull(dotenv.maybeGet('COGNITO_REGION'));
   static String? get cognitoHostedUiDomain => _orNull(dotenv.maybeGet('COGNITO_HOSTED_UI_DOMAIN'));
 
+  // Country shown before the user completes onboarding. Falls back to MY/en
+  // so flutter_test (which doesn't load .env) still has sane defaults.
+  static String get defaultCountry => _orNull(dotenv.maybeGet('DEFAULT_COUNTRY')) ?? 'MY';
+  static String get defaultLocale => _orNull(dotenv.maybeGet('DEFAULT_LOCALE')) ?? 'en';
+
+  // AI Barista (optional). When unset, the Barista uses its offline keyword
+  // recommender; setting a model URL enables the on-device Gemma LLM.
+  static String? get gemmaModelUrl => _orNull(dotenv.maybeGet('GEMMA_MODEL_URL'));
+  static String? get huggingFaceToken => _orNull(dotenv.maybeGet('HUGGINGFACE_TOKEN'));
+
   static String? _orNull(String? v) => (v == null || v.isEmpty) ? null : v;
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/countries_repository.dart';
+import '../../shared/widgets/lotties.dart';
 import 'country_controller.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -14,9 +15,53 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String? _country;
   String? _locale;
+  bool _committed = false;
 
   @override
   Widget build(BuildContext context) {
+    // First launch tries to detect the user's country from device location.
+    // On a supported match we persist it and skip straight to the menu; the
+    // manual picker below is the fallback for denied/unsupported/web cases.
+    final auto = ref.watch(autoSelectionProvider);
+    return auto.when(
+      loading: () => _statusScaffold('Finding your location…'),
+      error: (_, _) => _buildPicker(context),
+      data: (selection) {
+        if (selection == null) return _buildPicker(context);
+        if (!_committed) {
+          _committed = true;
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _commit(selection));
+        }
+        return _statusScaffold('Setting up ${selection.countryCode}…');
+      },
+    );
+  }
+
+  Future<void> _commit(CountrySelection selection) async {
+    await ref
+        .read(countrySelectionProvider.notifier)
+        .setCountry(selection.countryCode, locale: selection.localeCode);
+    ref.invalidate(onboardedProvider);
+    if (mounted) context.go('/menu');
+  }
+
+  Widget _statusScaffold(String message) => Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const LottieLoader(size: 130, center: false),
+                const SizedBox(height: 8),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Widget _buildPicker(BuildContext context) {
     final countriesAsync = ref.watch(countriesListProvider);
     return Scaffold(
       body: SafeArea(
@@ -25,6 +70,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Center(child: BearAvatar(size: 104)),
+              const SizedBox(height: 12),
               Text('Baskbear',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
@@ -33,12 +80,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 32),
               Expanded(
                 child: countriesAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () => const LottieLoader(),
                   error: (e, _) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text('Could not load countries.\n$e',
-                          textAlign: TextAlign.center),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.cloud_off, size: 40),
+                          const SizedBox(height: 12),
+                          const Text(
+                            "Couldn't reach Baskbear. Check your connection "
+                            'and that the app points at a running API.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.tonal(
+                            onPressed: () =>
+                                ref.invalidate(countriesListProvider),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   data: (countries) {

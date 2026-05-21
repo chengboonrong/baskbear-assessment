@@ -7,6 +7,7 @@ import '../../data/models/order.dart';
 import '../../data/models/voucher.dart';
 import '../../data/repositories/cart_repository.dart';
 import '../../data/repositories/orders_repository.dart';
+import '../../shared/widgets/lotties.dart';
 import '../onboarding/country_controller.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -31,17 +32,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cartAsync = ref.watch(cartProvider);
-    final country = ref.watch(countrySelectionProvider);
+    final country = ref.watch(currentCountryProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
       body: cartAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => Center(child: Text('$e')),
         data: (cart) {
-          // Tax rates are country-specific — recomputed on submit by the server.
-          // We mirror the math here for an honest preview.
-          const knownTax = {'MY': 600, 'TH': 700};
-          final taxBps = knownTax[country.countryCode] ?? 0;
+          // Tax rate comes from the country DTO (GET /v1/countries). Server
+          // recomputes on submit; this preview is just for UX honesty. If the
+          // country list hasn't loaded yet, the tax row reads 0% briefly.
+          final taxBps = country?.taxRateBps ?? 0;
           final discount = _voucher?.discountMinor ?? 0;
           final taxable = (cart.subtotalMinor - discount).clamp(0, 1 << 31);
           final tax = (taxable * taxBps / 10000).round();
@@ -77,6 +78,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ),
                   const SizedBox(width: 8),
                   FilledButton.tonal(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(88, 52),
+                    ),
                     onPressed: _voucherCtrl.text.trim().isEmpty ? null : _applyVoucher,
                     child: Text(_voucher == null ? 'Apply' : 'Re-apply'),
                   ),
@@ -114,7 +118,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               FilledButton(
                 onPressed: _placing || cart.items.isEmpty ? null : _placeOrder,
                 child: _placing
-                    ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.4))
+                    ? const LottieLoader(size: 30, center: false)
                     : const Text('Place order'),
               ),
             ],

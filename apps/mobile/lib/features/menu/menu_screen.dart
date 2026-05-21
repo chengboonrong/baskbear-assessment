@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/money.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/repositories/menu_repository.dart';
+import '../../shared/widgets/lotties.dart';
 import '../onboarding/country_controller.dart';
 
 class MenuScreen extends ConsumerWidget {
@@ -32,7 +33,7 @@ class MenuScreen extends ConsumerWidget {
         ],
       ),
       body: menuAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => _ErrorView(error: e, onRetry: () => ref.invalidate(menuListProvider)),
         data: (items) {
           final grouped = groupBy(items, (MenuItemDto i) => i.category.slug);
@@ -89,16 +90,7 @@ class _MenuRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.local_cafe, size: 32),
-              ),
+              CoffeeThumb(width: 64, height: 64, imageUrl: item.imageUrl),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

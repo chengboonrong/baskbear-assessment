@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test *)",
+      "Bash(flutter test *)",
+      "Bash(lsof -nP -iTCP:3000 -sTCP:LISTEN)",
+      "Bash(docker compose *)",
+      "Bash(open -a OrbStack)",
+      "Bash(docker info *)",
+      "Bash(docker exec *)",
+      "Bash(npx prisma *)",
+      "Bash(npm run *)",
+      "Bash(node dist/src/main.js)",
+      "Bash(curl -sf http://localhost:3000/health)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(curl -s -H 'X-Country: MY' http://localhost:3000/v1/menu)",
+      "Bash(flutter analyze *)",
+      "Bash(xargs -r kill)",
+      "Bash(docker run *)",
+      "Bash(curl -s -H 'X-Country: MY' http://localhost:3000/v1/countries)"
+    ]
+  }
+}

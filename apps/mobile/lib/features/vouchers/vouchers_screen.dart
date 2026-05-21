@@ -4,25 +4,26 @@ import 'package:intl/intl.dart';
 
 import '../../core/money.dart';
 import '../../data/repositories/vouchers_repository.dart';
+import '../../shared/widgets/lotties.dart';
 import '../onboarding/country_controller.dart';
 
 class VouchersScreen extends ConsumerWidget {
   const VouchersScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final country = ref.watch(countrySelectionProvider);
-    // Currency used for min-spend display: matches the user's country.
-    const ccyByCountry = {'MY': 'MYR', 'TH': 'THB'};
-    final ccy = ccyByCountry[country.countryCode] ?? 'MYR';
+    // Currency for min-spend display comes from the country DTO. Falls back
+    // to MYR if the country list hasn't loaded yet (a sub-second window).
+    final country = ref.watch(currentCountryProvider);
+    final ccy = country?.currencyCode ?? 'MYR';
     final vouchersAsync = ref.watch(vouchersListProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Offers')),
       body: vouchersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => Center(child: Text('$e')),
         data: (vouchers) {
           if (vouchers.isEmpty) {
-            return const Center(child: Text('No offers in your region right now.'));
+            return const LottieEmpty(message: 'No offers in your region right now.');
           }
           return ListView.separated(
             padding: const EdgeInsets.all(16),

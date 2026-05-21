@@ -6,6 +6,7 @@ import '../../core/money.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/repositories/cart_repository.dart';
 import '../../data/repositories/menu_repository.dart';
+import '../../shared/widgets/lotties.dart';
 
 class MenuItemDetailScreen extends ConsumerStatefulWidget {
   const MenuItemDetailScreen({super.key, required this.id});
@@ -27,7 +28,7 @@ class _MenuItemDetailScreenState extends ConsumerState<MenuItemDetailScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Detail')),
       body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => Center(child: Text('$e')),
         data: (item) => _build(item),
       ),
@@ -47,14 +48,11 @@ class _MenuItemDetailScreenState extends ConsumerState<MenuItemDetailScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Container(
+              CoffeeThumb(
+                width: double.infinity,
                 height: 180,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.local_cafe, size: 64),
+                radius: 16,
+                imageUrl: item.imageUrl,
               ),
               const SizedBox(height: 16),
               Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
@@ -99,7 +97,7 @@ class _MenuItemDetailScreenState extends ConsumerState<MenuItemDetailScreen> {
             child: FilledButton(
               onPressed: _adding || !_meetsMinima(item) ? null : () => _add(item),
               child: _adding
-                  ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.4))
+                  ? const LottieLoader(size: 30, center: false)
                   : Text('Add to cart · ${formatMoney(total, item.currencyCode)}'),
             ),
           ),

@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.3.1
   go_router: ^17.2.3
+  lottie: ^3.3.1
   dio: ^5.9.2
   hive: ^2.2.3
   hive_flutter: ^1.1.0
@@ -46,6 +47,11 @@ dependencies:
   collection: ^1.19.1
   shared_preferences: ^2.5.5
   amazon_cognito_identity_dart_2: ^4.0.0
+  geolocator: ^14.0.1
+  geocoding: ^4.0.0
+  flutter_gemma: ^0.12.6
+  speech_to_text: ^7.4.0
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +78,7 @@ flutter:
 
   assets:
     - .env
+    - assets/lottie/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

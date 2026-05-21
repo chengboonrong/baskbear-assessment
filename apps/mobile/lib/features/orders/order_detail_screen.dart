@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/money.dart';
 import '../../data/models/order.dart';
 import '../../data/repositories/orders_repository.dart';
+import '../../shared/widgets/lotties.dart';
 
 class OrderDetailScreen extends ConsumerWidget {
   const OrderDetailScreen({super.key, required this.id});
@@ -16,7 +17,7 @@ class OrderDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Order')),
       body: orderAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const LottieLoader(),
         error: (e, _) => Center(child: Text('$e')),
         data: (o) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(orderDetailProvider(id)),

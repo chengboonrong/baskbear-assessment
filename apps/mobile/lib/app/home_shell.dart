@@ -11,6 +11,7 @@ class HomeShell extends StatelessWidget {
     (path: '/cart',     icon: Icons.shopping_bag_outlined, active: Icons.shopping_bag, label: 'Cart'),
     (path: '/orders',   icon: Icons.receipt_long_outlined, active: Icons.receipt_long, label: 'Orders'),
     (path: '/vouchers', icon: Icons.local_offer_outlined,  active: Icons.local_offer,  label: 'Offers'),
+    (path: '/ai',       icon: Icons.auto_awesome_outlined, active: Icons.auto_awesome, label: 'Barista'),
     (path: '/account',  icon: Icons.person_outline,        active: Icons.person,       label: 'Account'),
   ];
 

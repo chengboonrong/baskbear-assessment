@@ -7,6 +7,7 @@ import '../../data/repositories/cart_repository.dart';
 import '../../data/repositories/menu_repository.dart';
 import '../../data/repositories/vouchers_repository.dart';
 import '../../data/repositories/orders_repository.dart';
+import '../../shared/widgets/lotties.dart';
 import '../onboarding/country_controller.dart';
 
 class AccountScreen extends ConsumerWidget {
@@ -21,7 +22,7 @@ class AccountScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           const ListTile(
-            leading: CircleAvatar(child: Icon(Icons.person)),
+            leading: BearAvatar(size: 48),
             title: Text('Demo user'),
             subtitle: Text('demo@baskbear.test'),
           ),
@@ -31,7 +32,7 @@ class AccountScreen extends ConsumerWidget {
             child: Text('Country', style: Theme.of(context).textTheme.titleMedium),
           ),
           countriesAsync.when(
-            loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
+            loading: () => const LottieLoader(size: 56),
             error: (e, _) => Padding(padding: const EdgeInsets.all(16), child: Text('$e')),
             data: (countries) => Column(
               children: [
@@ -85,6 +86,8 @@ class AccountScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout),
             label: const Text('Sign out'),
           ),
+          const SizedBox(height: 24),
+          const LottieFooter(),
         ],
       ),
     );

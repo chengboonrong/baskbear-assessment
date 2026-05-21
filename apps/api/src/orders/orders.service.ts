@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { FulfilmentType, OrderStatus, Prisma } from '@prisma/client';
+import { FulfilmentType, OrderStatus, Prisma } from '../generated/prisma/client';
 import { ulid } from 'ulid';
 import { PrismaService } from '../prisma/prisma.service';
 import { CountryContext } from '../common/types';
