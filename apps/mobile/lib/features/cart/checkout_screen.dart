@@ -74,6 +74,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         errorText: _voucherError,
                       ),
                       textCapitalization: TextCapitalization.characters,
+                      // Rebuild on each keystroke so the Apply button's
+                      // enabled state (which reads _voucherCtrl.text) updates.
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
                   const SizedBox(width: 8),
