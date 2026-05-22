@@ -9,6 +9,7 @@ import '../../data/repositories/cart_repository.dart';
 import '../../data/repositories/orders_repository.dart';
 import '../../shared/widgets/lotties.dart';
 import '../onboarding/country_controller.dart';
+import '../outlets/outlet_controller.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -178,6 +179,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final order = await ref.read(ordersRepositoryProvider).place(
         fulfilmentType: _fulfilment,
         voucherCode: _voucher?.code,
+        outletId: ref.read(selectedOutletProvider),
       );
       ref.invalidate(cartProvider);
       ref.invalidate(ordersListProvider);

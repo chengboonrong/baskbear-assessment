@@ -30,6 +30,27 @@ export class CountriesController {
     }));
   }
 
+  @Get('outlets')
+  async outlets(@Query('country') countryCode?: string) {
+    const country = countryCode
+      ? await this.prisma.country.findUnique({
+          where: { code: countryCode.toUpperCase() },
+        })
+      : null;
+    const outlets = await this.prisma.outlet.findMany({
+      where: { isActive: true, ...(country ? { countryId: country.id } : {}) },
+      orderBy: { name: 'asc' },
+    });
+    return outlets.map((o) => ({
+      id: o.id,
+      name: o.name,
+      address: o.address,
+      // Decimal → number for a clean JSON contract.
+      latitude: Number(o.latitude),
+      longitude: Number(o.longitude),
+    }));
+  }
+
   @Get('feature-flags')
   async featureFlags(@Query('country') countryCode?: string) {
     const country = countryCode

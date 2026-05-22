@@ -146,6 +146,24 @@ export class OrdersService {
             };
           });
 
+          // 2b. Outlet availability — when an outlet is chosen, reject any cart
+          //     item disabled at that outlet (overrides store exceptions only).
+          if (input.outletId != null) {
+            const blocked = await tx.menuItemOutletOverride.findMany({
+              where: {
+                outletId: input.outletId,
+                isAvailable: false,
+                menuItemId: { in: cart.items.map((it) => it.menuItemId) },
+              },
+              select: { menuItemId: true },
+            });
+            if (blocked.length > 0) {
+              throw new BadRequestException(
+                `ITEM_NOT_AVAILABLE_AT_OUTLET:${blocked[0].menuItemId}`,
+              );
+            }
+          }
+
           // 3. Voucher
           let voucherId: number | null = null;
           let discount = 0;

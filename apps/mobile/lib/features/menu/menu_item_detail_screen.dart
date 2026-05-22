@@ -58,6 +58,22 @@ class _MenuItemDetailScreenState extends ConsumerState<MenuItemDetailScreen> {
               Text(item.name, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 4),
               if (item.description != null) Text(item.description!),
+              if (!item.isAvailable) ...[
+                const SizedBox(height: 12),
+                Card(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.block),
+                        SizedBox(width: 8),
+                        Expanded(child: Text('Not available at the selected outlet.')),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               for (final g in item.customisationGroups) _Group(
                 group: g,
@@ -95,10 +111,14 @@ class _MenuItemDetailScreenState extends ConsumerState<MenuItemDetailScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: FilledButton(
-              onPressed: _adding || !_meetsMinima(item) ? null : () => _add(item),
+              onPressed: _adding || !item.isAvailable || !_meetsMinima(item)
+                  ? null
+                  : () => _add(item),
               child: _adding
                   ? const LottieLoader(size: 30, center: false)
-                  : Text('Add to cart · ${formatMoney(total, item.currencyCode)}'),
+                  : Text(item.isAvailable
+                      ? 'Add to cart · ${formatMoney(total, item.currencyCode)}'
+                      : 'Unavailable'),
             ),
           ),
         ),

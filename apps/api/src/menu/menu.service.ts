@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CountryContext } from '../common/types';
+import { resolveItemAvailability } from './menu-availability';
 
 export interface MenuItemDto {
   id: number;
@@ -36,6 +37,7 @@ export class MenuService {
   async list(
     country: CountryContext,
     categorySlug?: string,
+    outletId?: number,
   ): Promise<MenuItemDto[]> {
     const items = await this.prisma.menuItem.findMany({
       where: {
@@ -51,6 +53,9 @@ export class MenuService {
         },
         translations: { where: { localeId: country.localeId } },
         countryPrices: { where: { countryId: country.countryId } },
+        // Outlet ids start at 1, so `0` matches no rows when no outlet is
+        // selected → empty array → no outlet restriction.
+        outletOverrides: { where: { outletId: outletId ?? 0 } },
       },
     });
     return items
@@ -61,6 +66,7 @@ export class MenuService {
   async findOne(
     id: number,
     country: CountryContext,
+    outletId?: number,
   ): Promise<MenuItemDetailDto> {
     const item = await this.prisma.menuItem.findUnique({
       where: { id },
@@ -70,6 +76,7 @@ export class MenuService {
         },
         translations: { where: { localeId: country.localeId } },
         countryPrices: { where: { countryId: country.countryId } },
+        outletOverrides: { where: { outletId: outletId ?? 0 } },
         customGroups: {
           orderBy: { sortOrder: 'asc' },
           include: {
@@ -120,6 +127,7 @@ export class MenuService {
       dietaryTags: unknown;
       translations: Array<{ name: string; description: string | null }>;
       countryPrices: Array<{ priceMinor: number; isAvailable: boolean }>;
+      outletOverrides: Array<{ isAvailable: boolean }>;
       category: { slug: string; translations: Array<{ name: string }> };
     },
     country: CountryContext,
@@ -137,7 +145,8 @@ export class MenuService {
       },
       priceMinor: price.priceMinor,
       currencyCode: country.currencyCode,
-      isAvailable: price.isAvailable,
+      // Per-country flag, further restricted by the selected outlet (if any).
+      isAvailable: resolveItemAvailability(price.isAvailable, i.outletOverrides[0]),
       dietaryTags: Array.isArray(i.dietaryTags)
         ? (i.dietaryTags as string[])
         : [],

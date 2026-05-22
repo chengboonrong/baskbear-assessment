@@ -11,4 +11,8 @@ class PrefsKeys {
   static const country = 'pref.country';
   static const locale = 'pref.locale';
   static const onboarded = 'pref.onboarded';
+
+  /// Selected outlet is stored per-country: `pref.outlet.<COUNTRY>`. Switching
+  /// country naturally yields that country's own (or no) outlet.
+  static String outlet(String countryCode) => 'pref.outlet.$countryCode';
 }

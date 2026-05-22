@@ -1,4 +1,8 @@
 {
   "milk/oat": { "TH": 3125 },
-  "milk/soy": { "TH": 2500 }
+  "milk/soy": { "TH": 2500 },
+  "addons/extra-shot":    { "TH": 2500 },
+  "addons/whipped-cream": { "TH": 1500 },
+  "addons/vanilla-syrup": { "TH": 2000 },
+  "addons/caramel-syrup": { "TH": 2000 }
 }

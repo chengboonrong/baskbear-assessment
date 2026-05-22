@@ -53,12 +53,15 @@ type VoucherDef = {
   countries: string[];
 };
 type FlagDef = { key: string; country: string | null; isEnabled: boolean };
+// outletName -> list of SKUs that are UNAVAILABLE at that outlet.
+type OutletAvailabilityDef = Record<string, string[]>;
 
 const COUNTRIES = loadJson<CountryDef[]>('countries.json');
 const PRICING = loadJson<Record<string, Record<string, number>>>('pricing.json');
 const OPTION_PRICING = loadJson<Record<string, Record<string, number>>>('option-pricing.json');
 const VOUCHERS = loadJson<VoucherDef[]>('vouchers.json');
 const FLAGS = loadJson<FlagDef[]>('feature-flags.json');
+const OUTLET_AVAILABILITY = loadJson<OutletAvailabilityDef>('outlet-availability.json');
 
 // Locales are derived from the union of every country's `locales` — adding a
 // country with a new locale (e.g. SG → "en") brings the locale row in for free.
@@ -112,6 +115,19 @@ const CUSTOM_GROUPS = [
       { slug: 'none',   delta: 0, t: { en: 'No ice',   ms: 'Tiada ais',  th: 'ไม่ใส่น้ำแข็ง' } },
     ],
   },
+  // Add-ons: the only multi-select group (min 0, max 3). Optional extras with a
+  // per-item price delta — distinct from the single-select substitution groups
+  // above. Per-country price overrides live in option-pricing.json.
+  {
+    slug: 'addons', min: 0, max: 3,
+    t: { en: 'Add-ons', ms: 'Tambahan', th: 'เพิ่มเติม' },
+    options: [
+      { slug: 'extra-shot',    delta: 250, t: { en: 'Extra shot',    ms: 'Tambah shot',   th: 'เพิ่มช็อต' } },
+      { slug: 'whipped-cream', delta: 150, t: { en: 'Whipped cream', ms: 'Krim putar',    th: 'วิปครีม' } },
+      { slug: 'vanilla-syrup', delta: 200, t: { en: 'Vanilla syrup', ms: 'Sirap vanila',  th: 'ไซรัปวานิลลา' } },
+      { slug: 'caramel-syrup', delta: 200, t: { en: 'Caramel syrup', ms: 'Sirap karamel', th: 'ไซรัปคาราเมล' } },
+    ],
+  },
 ];
 
 // Menu items — SKU, category, customisations, dietary tags, translations.
@@ -125,31 +141,31 @@ type Item = {
 };
 
 const ITEMS: Item[] = [
-  { sku: 'ESP-001', category: 'espresso', customGroups: ['size','milk','sugar'], dietary: [],
+  { sku: 'ESP-001', category: 'espresso', customGroups: ['size','milk','sugar','addons'], dietary: [],
     t: {
       en: { name: 'Espresso',           description: 'Double shot of our signature blend.' },
       ms: { name: 'Espresso',           description: 'Dua tembakan campuran istimewa kami.' },
       th: { name: 'เอสเพรสโซ่',          description: 'เอสเพรสโซ่ดับเบิ้ลช็อตจากกาแฟคั่วของเรา' },
     } },
-  { sku: 'ESP-002', category: 'espresso', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'ESP-002', category: 'espresso', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Latte',              description: 'Smooth espresso with steamed milk.' },
       ms: { name: 'Latte',              description: 'Espresso lembut dengan susu kukus.' },
       th: { name: 'ลาเต้',               description: 'เอสเพรสโซ่นุ่มนวลกับนมร้อน' },
     } },
-  { sku: 'ESP-003', category: 'espresso', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'ESP-003', category: 'espresso', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Cappuccino',         description: 'Espresso with foamed milk and cocoa.' },
       ms: { name: 'Cappuccino',         description: 'Espresso dengan susu berbuih dan koko.' },
       th: { name: 'คาปูชิโน่',            description: 'เอสเพรสโซ่กับโฟมนมและผงโกโก้' },
     } },
-  { sku: 'ESP-004', category: 'espresso', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'ESP-004', category: 'espresso', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Mocha',              description: 'Espresso, steamed milk, and chocolate.' },
       ms: { name: 'Mocha',              description: 'Espresso, susu kukus, dan coklat.' },
       th: { name: 'มอคค่า',              description: 'เอสเพรสโซ่ผสมนมและช็อกโกแลต' },
     } },
-  { sku: 'ESP-005', category: 'espresso', customGroups: ['size','milk','sugar'], dietary: [],
+  { sku: 'ESP-005', category: 'espresso', customGroups: ['size','milk','sugar','addons'], dietary: [],
     t: {
       en: { name: 'Macchiato',          description: 'Espresso marked with a dollop of foam.' },
       ms: { name: 'Macchiato',          description: 'Espresso dengan setitik buih susu.' },
@@ -173,25 +189,25 @@ const ITEMS: Item[] = [
       ms: { name: 'Americano',          description: 'Espresso dengan air panas.' },
       th: { name: 'อเมริกาโน่',           description: 'เอสเพรสโซ่ผสมน้ำร้อน' },
     } },
-  { sku: 'SPC-001', category: 'specialty', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'SPC-001', category: 'specialty', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Pandan Latte',       description: 'Local pandan syrup, espresso, steamed milk.' },
       ms: { name: 'Latte Pandan',       description: 'Sirap pandan tempatan, espresso, susu kukus.' },
       th: { name: 'ลาเต้ใบเตย',          description: 'ไซรัปใบเตยกับเอสเพรสโซ่และนม' },
     } },
-  { sku: 'SPC-002', category: 'specialty', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'SPC-002', category: 'specialty', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Gula Melaka Latte',  description: 'Palm sugar caramel meets espresso.' },
       ms: { name: 'Latte Gula Melaka',  description: 'Karamel gula melaka bertemu espresso.' },
       th: { name: 'ลาเต้น้ำตาลโตนด',     description: 'น้ำตาลโตนดผสมเอสเพรสโซ่' },
     } },
-  { sku: 'SPC-003', category: 'specialty', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'SPC-003', category: 'specialty', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Thai Iced Coffee',   description: 'Strong drip coffee with sweetened milk.' },
       ms: { name: 'Kopi Ais Thai',      description: 'Kopi titis pekat dengan susu manis.' },
       th: { name: 'กาแฟเย็นไทย',         description: 'กาแฟดริปเข้มข้นกับนมข้นหวาน' },
     } },
-  { sku: 'SPC-004', category: 'specialty', customGroups: ['size','milk','sugar','ice'], dietary: [],
+  { sku: 'SPC-004', category: 'specialty', customGroups: ['size','milk','sugar','ice','addons'], dietary: [],
     t: {
       en: { name: 'Matcha Latte',       description: 'Ceremonial-grade matcha with milk.' },
       ms: { name: 'Latte Matcha',       description: 'Matcha gred upacara dengan susu.' },
@@ -280,6 +296,20 @@ function validateSeedData() {
     for (const code of Object.keys(perCountry)) {
       if (!countryCodes.has(code)) {
         errors.push(`option-pricing.json: option "${key}" overrides for unknown country "${code}"`);
+      }
+    }
+  }
+
+  // outlet-availability keys must be known outlet names; SKUs must be known.
+  const outletNames = new Set(COUNTRIES.flatMap((c) => c.outlets.map((o) => o.name)));
+  const skuSet = new Set(ITEMS.map((i) => i.sku));
+  for (const [outletName, skus] of Object.entries(OUTLET_AVAILABILITY)) {
+    if (!outletNames.has(outletName)) {
+      errors.push(`outlet-availability.json: unknown outlet "${outletName}"`);
+    }
+    for (const sku of skus) {
+      if (!skuSet.has(sku)) {
+        errors.push(`outlet-availability.json: outlet "${outletName}" references unknown SKU "${sku}"`);
       }
     }
   }
@@ -454,6 +484,29 @@ async function main() {
           menuItemId: dbItem.id,
           groupId: groupIdBySlug[it.customGroups[i]],
           sortOrder: i,
+        },
+      });
+    }
+  }
+
+  // Per-outlet availability overrides. A row marks an item UNAVAILABLE at an
+  // outlet; the absence of a row means available (the common case), so we only
+  // store the exceptions. Fully reconciled each run so deletions in the JSON
+  // propagate.
+  await prisma.menuItemOutletOverride.deleteMany({});
+  const outletByName = Object.fromEntries(
+    (await prisma.outlet.findMany()).map((o) => [o.name, o.id]),
+  );
+  const itemBySku = Object.fromEntries(
+    (await prisma.menuItem.findMany()).map((m) => [m.sku, m.id]),
+  );
+  for (const [outletName, skus] of Object.entries(OUTLET_AVAILABILITY)) {
+    for (const sku of skus) {
+      await prisma.menuItemOutletOverride.create({
+        data: {
+          outletId: outletByName[outletName],
+          menuItemId: itemBySku[sku],
+          isAvailable: false,
         },
       });
     }
