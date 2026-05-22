@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, Query, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CountryInterceptor } from '../countries/country.interceptor';
 import { CurrentCountry } from '../common/decorators';
 import type { CountryContext } from '../common/types';

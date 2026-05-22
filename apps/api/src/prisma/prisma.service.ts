@@ -6,7 +6,10 @@ import { PrismaClient } from '../generated/prisma/client';
 // schema.prisma. Runtime connections now go through a driver adapter; for
 // MySQL that's @prisma/adapter-mariadb (which wraps the `mariadb` driver).
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   constructor() {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error('DATABASE_URL is not set');

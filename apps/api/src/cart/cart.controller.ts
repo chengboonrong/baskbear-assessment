@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { z } from 'zod';
 import { CognitoJwtGuard } from '../auth/cognito-jwt.guard';
 import { CountryInterceptor } from '../countries/country.interceptor';
@@ -9,10 +20,14 @@ import { CartService } from './cart.service';
 const AddItem = z.object({
   menuItemId: z.number().int().positive(),
   quantity: z.number().int().min(1).max(20),
-  customisations: z.array(z.object({
-    groupSlug: z.string().min(1),
-    optionSlug: z.string().min(1),
-  })).default([]),
+  customisations: z
+    .array(
+      z.object({
+        groupSlug: z.string().min(1),
+        optionSlug: z.string().min(1),
+      }),
+    )
+    .default([]),
 });
 
 const UpdateQty = z.object({

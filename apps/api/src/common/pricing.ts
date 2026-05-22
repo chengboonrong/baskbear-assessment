@@ -22,7 +22,10 @@ export function computeLineTotal(
   return unitTotal * Math.max(1, quantity);
 }
 
-export function applyTax(subtotalMinusDiscountMinor: number, taxRateBps: number): number {
+export function applyTax(
+  subtotalMinusDiscountMinor: number,
+  taxRateBps: number,
+): number {
   // Rounded half-up to nearest minor unit.
   return Math.round((subtotalMinusDiscountMinor * taxRateBps) / 10000);
 }
@@ -46,7 +49,8 @@ export function computeVoucherDiscount(
   } else {
     raw = voucher.value;
   }
-  if (voucher.maxDiscountMinor !== null) raw = Math.min(raw, voucher.maxDiscountMinor);
+  if (voucher.maxDiscountMinor !== null)
+    raw = Math.min(raw, voucher.maxDiscountMinor);
   // Never discount more than the subtotal.
   return Math.max(0, Math.min(raw, subtotalMinor));
 }

@@ -1,4 +1,9 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,33 +32,52 @@ export class CountryInterceptor implements NestInterceptor {
     private readonly config: ConfigService,
   ) {}
 
-  async intercept(ctx: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+  async intercept(
+    ctx: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<unknown>> {
     const req = ctx.switchToHttp().getRequest<RequestWithContext>();
     const lookup = await this.getLookup();
 
-    const headerCountry = (req.header('x-country') as string | undefined)?.toUpperCase();
-    const queryCountry  = (req.query?.country as string | undefined)?.toUpperCase();
-    const userDefault   = req.auth ? lookup.userDefaults[req.auth.userId]?.country : undefined;
-    const envDefault    = (this.config.get<string>('DEFAULT_COUNTRY_CODE') ?? 'MY').toUpperCase();
+    const headerCountry = req.header('x-country')?.toUpperCase();
+    const queryCountry = (
+      req.query?.country as string | undefined
+    )?.toUpperCase();
+    const userDefault = req.auth
+      ? lookup.userDefaults[req.auth.userId]?.country
+      : undefined;
+    const envDefault = (
+      this.config.get<string>('DEFAULT_COUNTRY_CODE') ?? 'MY'
+    ).toUpperCase();
 
-    const countryCode = [headerCountry, queryCountry, userDefault, envDefault]
-      .find((c) => c && lookup.byCode[c]);
+    const countryCode = [
+      headerCountry,
+      queryCountry,
+      userDefault,
+      envDefault,
+    ].find((c) => c && lookup.byCode[c]);
     const country = lookup.byCode[countryCode!];
 
-    const headerLocale = (req.header('x-locale') as string | undefined)?.toLowerCase();
-    const queryLocale  = (req.query?.locale as string | undefined)?.toLowerCase();
-    const userLocale   = req.auth ? lookup.userDefaults[req.auth.userId]?.locale : undefined;
+    const headerLocale = req.header('x-locale')?.toLowerCase();
+    const queryLocale = (
+      req.query?.locale as string | undefined
+    )?.toLowerCase();
+    const userLocale = req.auth
+      ? lookup.userDefaults[req.auth.userId]?.locale
+      : undefined;
     const allowedLocales = country.locales;
-    const localeCode = [headerLocale, queryLocale, userLocale, country.defaultLocale]
-      .find((l) => l && allowedLocales[l]) ?? country.defaultLocale;
+    const localeCode =
+      [headerLocale, queryLocale, userLocale, country.defaultLocale].find(
+        (l) => l && allowedLocales[l],
+      ) ?? country.defaultLocale;
 
     req.country = {
-      countryId:    country.id,
-      countryCode:  country.code,
+      countryId: country.id,
+      countryCode: country.code,
       currencyCode: country.currencyCode,
-      taxRateBps:   country.taxRateBps,
+      taxRateBps: country.taxRateBps,
       localeCode,
-      localeId:     allowedLocales[localeCode],
+      localeId: allowedLocales[localeCode],
     };
     return next.handle();
   }
@@ -72,7 +96,7 @@ export class CountryInterceptor implements NestInterceptor {
         select: {
           id: true,
           defaultCountry: { select: { code: true } },
-          defaultLocale:  { select: { code: true } },
+          defaultLocale: { select: { code: true } },
         },
       }),
     ]);
@@ -80,19 +104,25 @@ export class CountryInterceptor implements NestInterceptor {
     const byCode: Record<string, CountryRow> = {};
     for (const c of countries) {
       byCode[c.code] = {
-        id: c.id, code: c.code, currencyCode: c.currencyCode,
-        taxRateBps: c.taxRateBps, defaultLocale: c.defaultLocale, locales: {},
+        id: c.id,
+        code: c.code,
+        currencyCode: c.currencyCode,
+        taxRateBps: c.taxRateBps,
+        defaultLocale: c.defaultLocale,
+        locales: {},
       };
     }
     for (const link of links) {
       const country = countries.find((c) => c.id === link.countryId);
-      if (country) byCode[country.code].locales[localeById[link.localeId]] = link.localeId;
+      if (country)
+        byCode[country.code].locales[localeById[link.localeId]] = link.localeId;
     }
-    const userDefaults: Record<number, { country?: string; locale?: string }> = {};
+    const userDefaults: Record<number, { country?: string; locale?: string }> =
+      {};
     for (const u of users) {
       userDefaults[u.id] = {
         country: u.defaultCountry?.code,
-        locale:  u.defaultLocale?.code,
+        locale: u.defaultLocale?.code,
       };
     }
     return { byCode, userDefaults };
@@ -100,8 +130,11 @@ export class CountryInterceptor implements NestInterceptor {
 }
 
 interface CountryRow {
-  id: number; code: string; currencyCode: string;
-  taxRateBps: number; defaultLocale: string;
+  id: number;
+  code: string;
+  currencyCode: string;
+  taxRateBps: number;
+  defaultLocale: string;
   locales: Record<string, number>;
 }
 interface CountryLookup {

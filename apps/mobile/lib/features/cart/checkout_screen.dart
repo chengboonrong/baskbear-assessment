@@ -136,22 +136,40 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       _voucher = null;
       _voucherError = null;
     });
+    final currency = ref.read(cartProvider).maybeWhen(
+          data: (c) => c.currencyCode,
+          orElse: () => 'MYR',
+        );
     try {
       final v = await ref.read(cartRepositoryProvider).validateVoucher(_voucherCtrl.text.trim().toUpperCase());
       setState(() => _voucher = v);
     } catch (e) {
-      setState(() => _voucherError = _parseError(e));
+      setState(() => _voucherError = _parseError(e, currency));
     }
   }
 
-  String _parseError(Object e) {
-    final s = e.toString();
-    if (s.contains('VOUCHER_INVALID')) return 'That code isn\'t valid.';
-    if (s.contains('VOUCHER_EXPIRED')) return 'That code has expired.';
-    if (s.contains('MIN_SPEND')) return 'Doesn\'t meet the minimum spend.';
-    if (s.contains('USER_LIMIT')) return 'You\'ve already used this code.';
-    if (s.contains('COUNTRY')) return 'Not available in your country.';
-    return 'Couldn\'t apply that code.';
+  String _parseError(Object e, String currency) {
+    if (e is! VoucherException) return 'Couldn\'t apply that code.';
+    switch (e.code) {
+      case 'VOUCHER_INVALID':
+        return 'That code isn\'t valid.';
+      case 'VOUCHER_NOT_YET_ACTIVE':
+        return 'This code isn\'t active yet.';
+      case 'VOUCHER_EXPIRED':
+        return 'That code has expired.';
+      case 'VOUCHER_NOT_AVAILABLE_IN_COUNTRY':
+        return 'Not available in your country.';
+      case 'MIN_SPEND_NOT_MET':
+        return e.minSpendMinor == null
+            ? 'Your cart doesn\'t meet the minimum spend for this code.'
+            : 'Spend at least ${formatMoney(e.minSpendMinor!, currency)} to use this code.';
+      case 'VOUCHER_USER_LIMIT_REACHED':
+        return 'You\'ve already used this code.';
+      case 'VOUCHER_EXHAUSTED':
+        return 'This code has been fully claimed.';
+      default:
+        return 'Couldn\'t apply that code.';
+    }
   }
 
   Future<void> _placeOrder() async {

@@ -17,7 +17,7 @@ Baskbear Coffee operates across Malaysia and Thailand and serves millions of cus
 | ------------- | ------------------------------------------------------------------------------------------------------- |
 | Menu          | ✅ Full — category browsing, multi-language, country pricing, customisation, dietary tags               |
 | Ordering      | ✅ Full — cart, checkout, idempotent placement, history, status timeline, peak-load design              |
-| Vouchers      | ✅ Listing, validation API, redemption wired through checkout (with a non-stackable policy, justified)  |
+| Vouchers      | ✅ User-aware listing (used/exhausted codes greyed out), validation API, redemption wired through checkout (non-stackable policy, justified) |
 | Multi-Country | ✅ MY + TH + SG, JSON-driven country onboarding (see [§4 Q8](#q8-how-does-your-schema-handle-multi-country-data)), in-session country switcher |
 
 Per the assessment brief, depth is prioritised on Menu + Ordering (where engineering trade-offs are most interesting). Vouchers and Multi-Country are functional but lighter on UX polish.
@@ -145,9 +145,10 @@ into the app binary, so never commit a real token (it's gitignored here).
 ### 4. Tests
 
 ```bash
-cd apps/api && npm test                  # 8 unit tests covering pricing + voucher rules
-cd apps/mobile && flutter test           # 35 tests: money formatter, DTO parsing, country resolution,
-                                         # AI Barista recommender + weather/mood context, Lottie widgets
+cd apps/api && npm test                  # 13 unit tests: pricing, voucher rules + availability
+cd apps/mobile && flutter test           # 52 tests: money formatter, DTO parsing, country resolution,
+                                         # voucher redeemability + error mapping, AI Barista recommender
+                                         # + weather/mood context, Lottie widgets
 ```
 
 CI runs the same on every push (`.github/workflows/api-ci.yml`, `mobile-ci.yml`).
@@ -175,6 +176,11 @@ CI runs the same on every push (`.github/workflows/api-ci.yml`, `mobile-ci.yml`)
    as they select size/milk/sugar (`menu_item_detail_screen.dart:43`). The
    voucher panel at checkout shows discount, tax, and total as separate
    line-items so there are no surprises (`checkout_screen.dart:_SummaryRow`).
+   The Offers list is **user-aware** — codes you've already used or that are
+   fully claimed render greyed-out with an "Already used" / "Fully claimed"
+   badge rather than failing only after you try them — and a rejected code at
+   checkout maps to a precise message (e.g. "Spend at least RM25.00 to use this
+   code") instead of a generic error.
 
 3. **Local feel beats global feel.** A Baskbear customer in Bangkok should see
    the menu in Thai with THB prices, not English with MYR mentally converted.
@@ -518,6 +524,12 @@ vouchers ──< voucher_countries >── countries
   (`MY5OFF`) or all of them (`WELCOME10`).
 - Redemptions are a join table — they're the source of truth for
   "has this user used this code?" and "have we hit total limit?".
+- `GET /v1/vouchers` reads those same counts (two grouped queries, no N+1) to
+  return a per-caller `redeemable` flag + `unavailableReason`. It's
+  optional-auth: anonymous callers see every offer; an authenticated caller
+  sees their already-used / exhausted codes greyed out. The rule is the pure
+  `computeVoucherAvailability` (`apps/api/src/vouchers/voucher-availability.ts`,
+  unit-tested) — redemption caps only; min-spend stays a checkout-time check.
 
 **Voucher stacking decision**: The default is **non-stackable**. One voucher
 per order. Rationale:
@@ -607,7 +619,7 @@ The intent:
 | `orders(userId, placedAt DESC)`                      | Customer order history — descending, capped at 50.                           |
 | `orders(countryId, placedAt DESC)`                   | Admin / ops query — "orders in TH today" without scanning.                   |
 | `orders(userId, idempotencyKey) UNIQUE`              | The idempotency guarantee. PK index doubles as enforcement.                  |
-| `voucher_redemptions(voucherId, userId)`             | Per-user usage count, hit on every order placement that uses a voucher.      |
+| `voucher_redemptions(voucherId, userId)`             | Per-user usage count — hit on every order placement and by the voucher list's redeemability check. |
 | `vouchers(isActive, startsAt, endsAt)`               | The voucher list endpoint filters on all three.                              |
 | Composite unique keys on every translation table     | Idempotent upserts during seeding + fast translation lookups.                |
 

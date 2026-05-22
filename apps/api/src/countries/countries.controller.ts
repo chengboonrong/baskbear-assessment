@@ -33,18 +33,24 @@ export class CountriesController {
   @Get('feature-flags')
   async featureFlags(@Query('country') countryCode?: string) {
     const country = countryCode
-      ? await this.prisma.country.findUnique({ where: { code: countryCode.toUpperCase() } })
+      ? await this.prisma.country.findUnique({
+          where: { code: countryCode.toUpperCase() },
+        })
       : null;
     const flags = await this.prisma.featureFlag.findMany({
       where: {
-        OR: [{ countryId: null }, ...(country ? [{ countryId: country.id }] : [])],
+        OR: [
+          { countryId: null },
+          ...(country ? [{ countryId: country.id }] : []),
+        ],
       },
       orderBy: [{ key: 'asc' }, { countryId: 'asc' }],
     });
     // Per-country flag wins over global.
     const merged: Record<string, boolean> = {};
     for (const f of flags) {
-      if (f.countryId === null && merged[f.key] === undefined) merged[f.key] = f.isEnabled;
+      if (f.countryId === null && merged[f.key] === undefined)
+        merged[f.key] = f.isEnabled;
     }
     for (const f of flags) {
       if (f.countryId !== null) merged[f.key] = f.isEnabled;

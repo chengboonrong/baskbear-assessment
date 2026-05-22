@@ -34,12 +34,23 @@ class VouchersScreen extends ConsumerWidget {
               final desc = v.type == 'PERCENT'
                   ? '${(v.value / 100).toStringAsFixed(0)}% off'
                   : '${formatMoney(v.value, ccy)} off';
+              final reason = unavailableLabel(v.unavailableReason);
               return Card(
                 child: ListTile(
+                  // enabled:false greys the icon + text so used/exhausted
+                  // offers read as disabled, with the reason in the trailing chip.
+                  enabled: v.redeemable,
                   leading: const Icon(Icons.local_offer_outlined),
                   title: Text('${v.code} · $desc'),
                   subtitle: Text('Min spend ${formatMoney(v.minSpendMinor, ccy)} · expires ${DateFormat.yMMMd().format(v.endsAt)}'),
-                  trailing: v.stackable ? const Chip(label: Text('Stackable')) : null,
+                  trailing: !v.redeemable && reason != null
+                      ? Chip(
+                          label: Text(reason),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                        )
+                      : (v.stackable ? const Chip(label: Text('Stackable')) : null),
                 ),
               );
             },
@@ -47,5 +58,18 @@ class VouchersScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+}
+
+/// Maps an API `unavailableReason` to a short badge label. Returns null for
+/// redeemable vouchers or unknown reasons (which then render no badge).
+String? unavailableLabel(String? reason) {
+  switch (reason) {
+    case 'ALREADY_USED':
+      return 'Already used';
+    case 'FULLY_CLAIMED':
+      return 'Fully claimed';
+    default:
+      return null;
   }
 }

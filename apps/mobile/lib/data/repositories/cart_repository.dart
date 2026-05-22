@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/http/api_client.dart';
@@ -45,11 +46,17 @@ class CartRepository {
   }
 
   Future<VoucherValidationDto> validateVoucher(String code) async {
-    final res = await _api.dio.post<Map<String, dynamic>>(
-      '/v1/vouchers/validate',
-      data: {'code': code},
-    );
-    return VoucherValidationDto.fromJson(res.data!);
+    try {
+      final res = await _api.dio.post<Map<String, dynamic>>(
+        '/v1/vouchers/validate',
+        data: {'code': code},
+      );
+      return VoucherValidationDto.fromJson(res.data!);
+    } on DioException catch (e) {
+      // The rejection reason is in the response body, not the exception
+      // string — surface it as a typed error the UI can map to a message.
+      throw VoucherException.fromBody(e.response?.data);
+    }
   }
 }
 

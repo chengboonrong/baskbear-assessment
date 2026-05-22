@@ -63,7 +63,9 @@ Most controllers compose two pieces of middleware:
 
 Controllers then pull these via the `@CurrentUser()` / `@CurrentCountry()` param decorators in `apps/api/src/common/decorators.ts`. If you add a new endpoint that depends on country pricing or per-user data, both pieces must be wired — the decorators throw at runtime if their context is missing.
 
-Public endpoints that only need country (`/v1/menu`, `/v1/vouchers GET`, `/v1/countries`) skip the guard. `/v1/auth/exchange` skips the interceptor.
+Public endpoints that only need country (`/v1/menu`, `/v1/countries`) skip the guard. `/v1/auth/exchange` skips the interceptor.
+
+`GET /v1/vouchers` is **optional-auth**: it uses `@UseGuards(OptionalCognitoJwtGuard)` (also in `cognito-jwt.guard.ts`) + the `@CurrentUserOptional()` decorator. The optional guard reuses `CognitoJwtGuard.authenticate(req)` but never throws — a missing/invalid token just leaves the caller anonymous. This lets the public Offers list stay browsable while *enriching* each voucher with a per-user `redeemable` / `unavailableReason` (`ALREADY_USED` | `FULLY_CLAIMED`) when a token is present. The redeemability rule is the pure `computeVoucherAvailability` in `apps/api/src/vouchers/voucher-availability.ts` (redemption caps only — min-spend is cart-dependent and stays a validate/checkout concern). If you add another endpoint that should enrich-when-known rather than require auth, reuse `OptionalCognitoJwtGuard` + `@CurrentUserOptional()` (and import `AuthModule`, which exports both guards).
 
 ### Money is always minor units; percentages are basis points
 Schema and code use `Int` minor units (cents/satang) — never floats. Tax rates and percentage vouchers use basis points (1bp = 0.01%, so 600bps = 6.00%). The shared helpers in `apps/api/src/common/pricing.ts` (`computeLineTotal`, `applyTax`, `computeVoucherDiscount`) are the canonical implementations and are unit-tested in `pricing.spec.ts`. When adding pricing logic, route it through these helpers — the order placement path in `orders.service.ts` calls them inside the transaction.

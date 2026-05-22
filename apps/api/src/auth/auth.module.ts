@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CognitoJwtGuard } from './cognito-jwt.guard';
+import { CognitoJwtGuard, OptionalCognitoJwtGuard } from './cognito-jwt.guard';
 import { AuthController } from './auth.controller';
 
 @Module({
-  providers: [CognitoJwtGuard],
-  exports: [CognitoJwtGuard],
+  providers: [CognitoJwtGuard, OptionalCognitoJwtGuard],
+  exports: [CognitoJwtGuard, OptionalCognitoJwtGuard],
   controllers: [AuthController],
 })
 export class AuthModule {}

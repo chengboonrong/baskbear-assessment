@@ -33,7 +33,10 @@ export interface MenuItemDetailDto extends MenuItemDto {
 export class MenuService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(country: CountryContext, categorySlug?: string): Promise<MenuItemDto[]> {
+  async list(
+    country: CountryContext,
+    categorySlug?: string,
+  ): Promise<MenuItemDto[]> {
     const items = await this.prisma.menuItem.findMany({
       where: {
         isPublished: true,
@@ -46,7 +49,7 @@ export class MenuService {
             translations: { where: { localeId: country.localeId } },
           },
         },
-        translations:  { where: { localeId: country.localeId } },
+        translations: { where: { localeId: country.localeId } },
         countryPrices: { where: { countryId: country.countryId } },
       },
     });
@@ -55,12 +58,17 @@ export class MenuService {
       .map((i) => this.toDto(i, country));
   }
 
-  async findOne(id: number, country: CountryContext): Promise<MenuItemDetailDto> {
+  async findOne(
+    id: number,
+    country: CountryContext,
+  ): Promise<MenuItemDetailDto> {
     const item = await this.prisma.menuItem.findUnique({
       where: { id },
       include: {
-        category: { include: { translations: { where: { localeId: country.localeId } } } },
-        translations:  { where: { localeId: country.localeId } },
+        category: {
+          include: { translations: { where: { localeId: country.localeId } } },
+        },
+        translations: { where: { localeId: country.localeId } },
         countryPrices: { where: { countryId: country.countryId } },
         customGroups: {
           orderBy: { sortOrder: 'asc' },
@@ -70,7 +78,7 @@ export class MenuService {
                 translations: { where: { localeId: country.localeId } },
                 options: {
                   include: {
-                    translations:  { where: { localeId: country.localeId } },
+                    translations: { where: { localeId: country.localeId } },
                     countryPrices: { where: { countryId: country.countryId } },
                   },
                 },
@@ -81,7 +89,9 @@ export class MenuService {
       },
     });
     if (!item || !item.isPublished || item.countryPrices.length === 0) {
-      throw new NotFoundException(`Menu item ${id} not available in ${country.countryCode}`);
+      throw new NotFoundException(
+        `Menu item ${id} not available in ${country.countryCode}`,
+      );
     }
     const base = this.toDto(item, country);
     return {
@@ -95,7 +105,8 @@ export class MenuService {
           slug: opt.slug,
           name: opt.translations[0]?.name ?? opt.slug,
           // Country override > default delta. Cleaner than a join coalesce in SQL.
-          priceDeltaMinor: opt.countryPrices[0]?.priceDeltaMinor ?? opt.priceDeltaMinor,
+          priceDeltaMinor:
+            opt.countryPrices[0]?.priceDeltaMinor ?? opt.priceDeltaMinor,
         })),
       })),
     };
@@ -103,7 +114,10 @@ export class MenuService {
 
   private toDto(
     i: {
-      id: number; sku: string; baseImageUrl: string | null; dietaryTags: unknown;
+      id: number;
+      sku: string;
+      baseImageUrl: string | null;
+      dietaryTags: unknown;
       translations: Array<{ name: string; description: string | null }>;
       countryPrices: Array<{ priceMinor: number; isAvailable: boolean }>;
       category: { slug: string; translations: Array<{ name: string }> };
@@ -121,11 +135,13 @@ export class MenuService {
         slug: i.category.slug,
         name: i.category.translations[0]?.name ?? i.category.slug,
       },
-      priceMinor:   price.priceMinor,
+      priceMinor: price.priceMinor,
       currencyCode: country.currencyCode,
-      isAvailable:  price.isAvailable,
-      dietaryTags:  Array.isArray(i.dietaryTags) ? (i.dietaryTags as string[]) : [],
-      imageUrl:     i.baseImageUrl,
+      isAvailable: price.isAvailable,
+      dietaryTags: Array.isArray(i.dietaryTags)
+        ? (i.dietaryTags as string[])
+        : [],
+      imageUrl: i.baseImageUrl,
     };
   }
 }
