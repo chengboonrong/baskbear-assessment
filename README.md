@@ -3,38 +3,36 @@
 > **Loob Holding Sdn Bhd — Lead Full Stack Developer Assessment**
 > Candidate: Chris Cheng · Submission: May 2026
 
-A cross-platform mobile app redesign for **Baskbear Coffee**, delivered as a Flutter app backed by a NestJS + MySQL API, with an AWS multi-region deployment blueprint.
+A mobile app redesign for **Baskbear Coffee** — lets customers browse the menu, customise their drink, and place orders from their phone. Available in Malaysia, Thailand, and Singapore, with local pricing, language, and promotions for each market.
 
-This README is self-contained: all 17 assessment questions are answered in full below (§3 Design & UX, §4 Database Design, §5 AWS Architecture). The rendered ER and AWS topology diagrams live in [`docs/`](docs/).
+Built as a cross-platform Flutter app (iOS, Android, and web) backed by a REST API and a cloud deployment blueprint on AWS. All 17 assessment questions are answered in full below (§3 Design & UX, §4 Database Design, §5 AWS Architecture). Architecture diagrams live in [`docs/`](docs/).
 
 ---
 
 ## App Overview
 
-Baskbear Coffee operates across Malaysia and Thailand and serves millions of customers. This submission reimagines its mobile ordering experience around four pillars: **fast browsing**, **frictionless ordering**, **local relevance** (currency, language, tax, outlets), and **trustworthy promotions** (voucher rules customers can predict).
+Baskbear Coffee serves millions of customers across Malaysia and Thailand. This submission reimagines its mobile ordering experience around four principles: **browse quickly**, **order without friction**, **feel local** (right currency, language, and tax for your country), and **trust your promotions** (discount codes that behave as described).
 
-| Module        | What ships                                                                                              |
+| Feature       | What it does                                                                                            |
 | ------------- | ------------------------------------------------------------------------------------------------------- |
-| Menu          | ✅ Full — category browsing, multi-language, country pricing, customisation, dietary tags               |
-| Ordering      | ✅ Full — cart, checkout, idempotent placement, history, status timeline, peak-load design              |
-| Vouchers      | ✅ User-aware listing (used/exhausted codes greyed out), validation API, redemption wired through checkout (non-stackable policy, justified) |
-| Multi-Country | ✅ MY + TH + SG, JSON-driven country onboarding (see [§4 Q8](#q8-how-does-your-schema-handle-multi-country-data)), in-session country switcher |
-
-Per the assessment brief, depth is prioritised on Menu + Ordering (where engineering trade-offs are most interesting). Vouchers and Multi-Country are functional but lighter on UX polish.
+| Menu          | Browse drinks by category, see prices in your local currency, customise your order (size, milk, sugar), filter by dietary preference |
+| Ordering      | Add items to cart, checkout, track your order status through to completion, review past orders          |
+| Vouchers      | Apply discount codes at checkout; codes you've already used or that have expired are clearly labelled so you're never surprised by a rejection |
+| Multi-Country | Fully localised for Malaysia, Thailand, and Singapore — each market shows its own prices, language, tax rate, and available promotions; switch countries from the Account tab |
 
 ---
 
 ## Tech Stack
 
-| Layer            | Technology                                          | Justification (short)                                                                                                                       |
-| ---------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend         | Flutter 3.38 + Riverpod 2 + go_router               | Single codebase iOS+Android+Web; Riverpod's compile-safe DI fits a feature-modularised codebase; go_router gives deep-linkable URLs.       |
-| On-device AI     | flutter_gemma (Gemma 3 1B) + speech_to_text + flutter_tts + Open-Meteo | "AI Barista" tab — an offline LLM that recommends from the live menu, with voice in/out and weather+mood awareness. Keyless weather; a deterministic keyword recommender is the fallback so it works with no model/network. See [§3.1 Q3](#q3-optional-what-additional-features-did-you-build-beyond-the-four-required-modules-and-why). |
-| Backend          | NestJS 11 (TypeScript) + Prisma 7 + Zod             | Modular DI / decorators give a clean architectural showcase; Prisma 7's driver-adapter pattern (no Rust query engine) trims runtime + cold-start; Zod adds runtime input validation. |
-| Database         | MySQL 8 (Aurora MySQL in prod)                      | Required. Aurora gives multi-region read replicas + Global Database for cross-region failover.                                              |
-| Auth             | AWS Cognito (User Pools, Hosted UI)                 | Hosted UI removes auth UI work; MFA + social-login ready; JWT verified by API via JWKS; fits the AWS theme. Dev bypass for local review.    |
-| Cloud            | AWS — ECS Fargate, Aurora, ElastiCache, S3+CloudFront | See [§5 AWS Architecture](#5-aws-architecture--scalability).                                                                               |
-| Version Control  | GitHub                                              | This repo (`baskbear-assessment`).                                                                                                          |
+| Layer            | Technology                                          | What it enables                                                                                   |
+| ---------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Mobile app       | Flutter 3.38 + Riverpod 2 + go_router               | One codebase runs on iOS, Android, and web without duplication.                                   |
+| On-device AI     | Gemma 3 1B + speech_to_text + flutter_tts + Open-Meteo | AI Barista feature — a voice-enabled drink recommender that runs offline and adapts to weather and mood. See [§3.1 Q3](#q3-optional-what-additional-features-did-you-build-beyond-the-four-required-modules-and-why). |
+| API              | NestJS 11 (TypeScript) + Prisma 7                   | Structured, type-safe backend that handles menus, orders, vouchers, and multi-country data.       |
+| Database         | MySQL 8 (Aurora MySQL in production)                | Reliable relational storage with multi-region replication for high availability.                  |
+| Authentication   | AWS Cognito                                         | Secure sign-in with MFA support; no AWS credentials needed for local development.                 |
+| Cloud hosting    | AWS — ECS Fargate, Aurora, ElastiCache, S3+CloudFront | Scalable, low-latency infrastructure across Southeast Asia. See [§5 AWS Architecture](#5-aws-architecture--scalability). |
+| Version Control  | GitHub                                              | This repo (`baskbear-assessment`).                                                                |
 
 ---
 
@@ -74,7 +72,7 @@ baskbear-assessment/
 - Flutter 3.38+ (tested on 3.38.3)
 - Node.js 20+ (Node 25 tested)
 - Docker / OrbStack (for MySQL via the included `docker-compose.yml`)
-- Xcode (iOS sim) or Android Studio (emulator) or Chrome (web)
+- Android Studio (for the Android emulator)
 
 ### 1. Start MySQL
 
@@ -114,14 +112,10 @@ A demo user `demo@baskbear.test` is seeded. In dev (`DEV_AUTH_BYPASS=true`, the 
 cd apps/mobile
 cp .env.example .env
 flutter pub get
-flutter run                              # picks the first available device
+flutter run -d <android-emu-name>        # start the emulator in Android Studio first
 ```
 
-The Flutter code targets **iOS, Android, and Chrome**. Pick whichever device works for you:
-
-- `flutter run -d chrome --web-port 5050` — fastest first run, no toolchain setup beyond Chrome.
-- `flutter run -d <ios-sim-udid>` — when you have an iOS Simulator runtime matching your installed Xcode SDK.
-- `flutter run -d <android-emu-name>` — Android emulator (use `API_BASE_URL=http://10.0.2.2:3000` in `.env`).
+Set `API_BASE_URL=http://10.0.2.2:3000` in `apps/mobile/.env` — Android emulators reach the host machine at `10.0.2.2` instead of `localhost`.
 
 #### Enabling the on-device AI Barista LLM (optional)
 
@@ -137,10 +131,7 @@ keyword recommender. To run the real on-device LLM (Gemma 3 1B via
 4. **Fully restart** the app (`.env` is a bundled asset read once at startup),
    open the Barista tab, and tap **Enable AI** to download (cached afterwards).
 
-**On-device inference only runs reliably on a physical device** — emulators and
-the iOS Simulator fall back to the keyword recommender (see
-[Known Limitations](#known-limitations--what-i-would-improve)). `.env` is bundled
-into the app binary, so never commit a real token (it's gitignored here).
+**On-device inference only runs reliably on a physical device** — the Android emulator falls back to the keyword recommender (see [Known Limitations](#known-limitations--what-i-would-improve)). `.env` is bundled into the app binary, so never commit a real token (it's gitignored here).
 
 ### 4. Tests
 
@@ -875,40 +866,10 @@ needed, so the workflows stop at the artifact stage).
 
 ## Known Limitations & What I Would Improve
 
-- **Cognito Hosted UI**: signing in via the real Hosted UI requires an AWS
-  user pool — the API ships with a `DEV_AUTH_BYPASS` flag so reviewers
-  don't need AWS credentials. With more time I'd add a local Cognito stub
-  (LocalStack Pro / `mockcognito`) so the full sign-in flow can be
-  exercised offline.
-- **iOS simulator runtime on Xcode 26.4**: this codebase builds and ships
-  for iOS, but the local machine's Xcode 26.4 needs the iOS 26.4 simulator
-  runtime installed to launch (not currently present). The Flutter UI runs
-  identically on Chrome and Android — `flutter run -d chrome` is the
-  smoothest reviewer path on a fresh machine.
-- **Push notifications**: order-status updates are pulled (refresh on
-  screen open). FCM / APNs push integration is described in
-  [§5 Q11](#q11-describe-your-overall-aws-architecture-which-services-would-you-use-and-how-do-they-connect) but not
-  implemented — would land via SQS → Lambda → FCM in the next sprint.
-- **Kitchen / POS integration**: the order pipeline ends at "PENDING".
-  Real outlet integration would consume the SQS order-events stream.
-- **Payments**: out of scope per brief; current flow places orders with
-  total but doesn't capture payment. Stripe / Razer integration is a
-  one-evening task once secrets land.
-- **Localised content**: 3 locales (en, ms, th) seeded for every menu
-  entity. Translations are professional-grade for the English copy and
-  best-effort for ms/th — a localisation pass with native speakers is the
-  obvious next step.
-- **Riverpod codegen**: I attempted `riverpod_generator` but it conflicts
-  with Riverpod 3 on the current Dart SDK. Manual provider syntax is used
-  throughout — preserves testability without the codegen step.
-- **AI Barista on-device model**: real Gemma inference (via `flutter_gemma`)
-  is only reliable on **physical devices** — `flutter_gemma`'s maintainer notes
-  emulators/simulators aren't supported, and the iOS-Simulator CPU path needs a
-  newer plugin version than this repo's pinned Dart SDK (3.10.1) allows
-  (`>=0.12.7` requires 3.10.7). So on the Android emulator and iOS Simulator the
-  Barista runs its built-in keyword recommender (which always works); tapping
-  "Enable AI" attempts the model and degrades gracefully if the device can't run
-  it. To try the real LLM, set `GEMMA_MODEL_URL` (a MediaPipe `.task` Gemma model)
-  and `HUGGINGFACE_TOKEN` in `apps/mobile/.env` and run on a device. With more
-  time I'd bump the toolchain to `flutter_gemma` 0.16's LiteRT-LM engine, which
-  documents iOS-Simulator CPU support.
+- **Sign-in flow**: The full AWS-hosted sign-in screen requires cloud credentials to run locally. A `DEV_AUTH_BYPASS` flag is included so reviewers can use the app without an AWS account. A local mock of the auth service is the natural next step.
+- **Android emulator**: Start the emulator in Android Studio before running `flutter run`. Set `API_BASE_URL=http://10.0.2.2:3000` in `apps/mobile/.env` — Android emulators route to the host machine via `10.0.2.2`, not `localhost`.
+- **Push notifications**: Order status updates require a manual refresh rather than arriving as push notifications. The backend design for push delivery is documented in [§5 Q11](#q11-describe-your-overall-aws-architecture-which-services-would-you-use-and-how-do-they-connect) but not yet wired up.
+- **Kitchen / outlet integration**: Placed orders sit at "Pending" status. Connecting to a real POS or kitchen display system is the next step in the order pipeline.
+- **Payments**: Payment capture is out of scope per the assessment brief. The checkout flow calculates the correct total but does not process a card. Integrating a payment provider (e.g. Stripe or Razer) is straightforward once credentials are available.
+- **Malay and Thai translations**: English copy is polished; Malay and Thai translations are functional but would benefit from a review by native speakers.
+- **AI Barista on physical device**: The on-device AI model runs reliably on a physical phone only — emulators and simulators fall back to a built-in keyword recommender that always works. To try the full AI experience, add your HuggingFace token to `apps/mobile/.env` and run on a real device.

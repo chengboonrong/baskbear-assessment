@@ -1,16 +1,29 @@
-# baskbear
+# Baskbear Coffee — Mobile App
 
-A new Flutter project.
+Flutter 3.38 app for the Baskbear Coffee ordering experience. Runs on iOS, Android, and Chrome. Connects to the NestJS API in `apps/api/`.
 
-## Getting Started
+> Full setup instructions, environment variables, and feature descriptions are in the [root README](../../README.md).
 
-This project is a starting point for a Flutter application.
+## Quick start
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+cd apps/mobile
+cp .env.example .env
+flutter pub get
+flutter run -d chrome --web-port 5050   # fastest first run — no device setup needed
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+For Android emulator, set `API_BASE_URL=http://10.0.2.2:3000` in `.env`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Key commands
+
+```bash
+flutter test                                      # run all tests
+flutter test test/data/menu_dto_test.dart         # single test file
+flutter analyze --no-fatal-infos                  # lint (matches CI)
+flutter build apk                                 # debug APK
+```
+
+## AI Barista (optional)
+
+The Barista tab works out of the box via an offline keyword recommender. To enable the on-device Gemma AI model, add your HuggingFace token to `.env` — see the [root README](../../README.md#enabling-the-on-device-ai-barista-llm-optional) for the full setup steps.
